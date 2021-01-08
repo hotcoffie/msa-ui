@@ -8,13 +8,15 @@ import (
 	"os"
 )
 
+const userFile = "users.json"
+
 var Users = make(map[string]string)
 
 func init() {
 	initUsers()
 }
 func initUsers() {
-	file, err := os.OpenFile("users.json", os.O_CREATE|os.O_RDWR, os.ModePerm)
+	file, err := os.OpenFile(userFile, os.O_CREATE|os.O_RDWR, os.ModePerm)
 	if err != nil {
 		log.Panic("打开用户信息:", err)
 	}
@@ -37,7 +39,7 @@ func UpdateUser(username, password string) error {
 		return nil
 	}
 	Users[username] = password
-	file, err := os.OpenFile("users.yml", os.O_CREATE|os.O_RDWR, os.ModePerm)
+	file, err := os.OpenFile(userFile, os.O_CREATE|os.O_RDWR, os.ModePerm)
 	if err != nil {
 		log.Panic("打开用户信息:", err)
 	}

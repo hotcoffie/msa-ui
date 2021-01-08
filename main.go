@@ -165,7 +165,7 @@ func wsConnHandle(conn *websocket.Conn) {
 }
 
 func writDataToFile(cd *ConfData) error {
-	confFile, err := os.OpenFile("conf.yml", os.O_CREATE|os.O_RDWR|os.O_TRUNC, os.ModePerm)
+	confFile, err := os.OpenFile("conf.yml", os.O_RDWR|os.O_TRUNC|os.O_CREATE, 0766)
 	if err != nil {
 		return errors.WithMessage(err, "打开conf.yml")
 	}
@@ -188,7 +188,7 @@ threadNum: %d`, cd.Active, cd.Username, cd.Password, cd.Points, cd.ThreadNum)
 		return errors.WithMessage(err, "修改conf.yml")
 	}
 
-	infoFile, err := os.OpenFile("info.yml", os.O_CREATE|os.O_RDWR|os.O_TRUNC, os.ModePerm)
+	infoFile, err := os.OpenFile("info.yml", os.O_RDWR|os.O_TRUNC|os.O_CREATE, 0766)
 	if err != nil {
 		return errors.WithMessage(err, "打开info.yml")
 	}
