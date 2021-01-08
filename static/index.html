@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>抢点</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css"
+        integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+  <style>
+      body {
+          background: url("/static/image/bg.jpg") no-repeat fixed center 0;
+          background-size: cover;
+          -webkit-background-size: cover;
+          -o-background-size: cover;
+          -moz-background-size: cover;
+          -ms-background-size: cover;
+      }
+
+      #btns {
+          display: flex;
+          justify-content: space-around;
+      }
+
+      #btns button {
+          width: 80px;
+      }
+
+      #logs {
+          height: 85vh;
+          overflow: auto;
+      }
+
+      #logs p {
+          margin-bottom: 5px;
+      }
+  </style>
+</head>
+<body>
+<div class="container-fluid">
+  <div class="row" style="margin-top: 20px;">
+    <div class="col-md-8">
+      <div class="panel panel-info" style="background:rgba(255,255,255,0.9);">
+        <div class="panel-heading">
+          <h3 class="panel-title"><span class="glyphicon glyphicon-signal" aria-hidden="true"></span> 状态</h3>
+        </div>
+        <div class="panel-body" id="logs">
+          <table class="table table-hover table-condensed">
+            <thead>
+            <tr>
+              <th>时间点</th>
+              <th>线程号</th>
+              <th>更新时间</th>
+              <th>状态</th>
+              <th>消息</th>
+              <th>附加</th>
+            </tr>
+            </thead>
+            <tbody>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="panel panel-info" style="background:rgba(255,255,255,0.9);">
+        <div class="panel-heading">
+          <h3 class="panel-title"><span class="glyphicon glyphicon-cog" aria-hidden="true"></span> 控制</h3>
+        </div>
+        <div class="panel-body">
+          <div class="alert alert-warning alert-dismissible" role="alert" id="alert">
+          </div>
+          <form class="form-horizontal" id="controlForm">
+            <div class="form-group">
+              <label for="username" class="col-sm-3 control-label">用户名</label>
+              <div class="col-sm-9">
+                <div class="input-group">
+                  <input type="text" class="form-control" id="username" placeholder="用户名" onblur="validateData()"
+                         style="background-color: transparent;">
+                  <div class="input-group-btn">
+                    <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"
+                            aria-haspopup="true" aria-expanded="false">记录 <span class="caret"></span></button>
+                    <ul class="dropdown-menu dropdown-menu-right" id="users">
+                    
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="password" class="col-sm-3 control-label">密码</label>
+              <div class="col-sm-9">
+                <input type="text" class="form-control" id="password" placeholder="密码" onblur="validateData()"
+                       style="background-color: transparent;">
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="points" class="col-sm-3 control-label">时间点</label>
+              <div class="col-sm-9">
+                <input type="text" class="form-control" id="points" placeholder="时间点，空格分割" onblur="validateData()"
+                       style="background-color: transparent;">
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="threadNum" class="col-sm-3 control-label">线程数</label>
+              <div class="col-sm-9">
+                <input type="number" class="form-control" id="threadNum" placeholder="线程数，根据测试时CPU和网络情况调整，并非越多越好"
+                       onblur="validateData()"
+                       style="background-color: transparent;">
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="info" class="col-sm-3 control-label">申报信息</label>
+              <div class="col-sm-9">
+                <textarea class="form-control" rows="10" id="info" style="background-color: transparent;"
+                          onblur="validateData()"></textarea>
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="panel-footer" id="btns">
+          <button type="button" class="btn btn-info" onclick="run('dev')">测试</button>
+          <button type="button" class="btn btn-warning" onclick="run('prod')">运行</button>
+          <button type="button" class="btn btn-danger" disabled onclick="stop()">终止</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="http://libs.baidu.com/jquery/2.0.0/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/js/bootstrap.min.js"
+        integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
+        crossorigin="anonymous"></script>
+<script>
+
+$(() => {
+  setMessage('warning', '<strong>已关闭</strong>')
+  init()
+})
+
+function init() {
+  $.get('/api/init', res => {
+    if (res.code !== 200) {
+      setMessage('danger', `<strong>失败！</strong>${res.msg}`)
+      return
+    }
+    const $users = $('#users')
+    $users.html('')
+    for (let username in res.data.users) {
+      let li = `<li><a href="#" onclick="setUser('${username}','${res.data.users[username]}')">${username}</a></li>`
+      $users.append(li)
+    }
+    const $threadNum = $('#threadNum')
+    if (!$threadNum.val()) {
+      $threadNum.val(res.data.threadNum)
+    }
+  })
+}
+
+function setUser(username, password) {
+  $('#username').val(username)
+  $('#password').val(password)
+}
+
+let sock = null;
+
+function run(mode) {
+  const data = validateData()
+  if (!data) {
+    return
+  }
+  data.active = mode
+  if (mode === 'dev') {
+    data.threadNum = 1
+  }
+  toggleButton()
+  flushPoints(data.points, data.threadNum)
+  let login = false
+  sock = new WebSocket(`ws://${location.host}/api/run`);
+  sock.onopen = function () {
+    //成功连接到服务器
+    console.log('连接成功');
+    setMessage('success', '<strong>运行中...</strong>')
+    sock.send(JSON.stringify(data))
+  }
+  sock.onclose = function (e) {
+    console.log("连接关闭 (" + e.code + ")");
+    toggleButton()
+    setMessage('warning', '<strong>已关闭</strong>')
+    modal({msg: '运行结束'})
+    if (login) {
+      $.post('/api/saveUser', {username: data.username, password: data.password}, res => {
+        if (res.code === 200) {
+          init()
+        }
+      })
+    }
+  }
+  sock.onmessage = function (e) {
+    if (!e || !e.data) {
+      return
+    }
+    const msg = JSON.parse(e.data)
+    if (msg.error && msg.error.startsWith('识别结果')) {
+      return
+    }
+    if (!login || msg.msg === '登录成功') {
+      login = true
+    }
+    if (msg.point) {
+      const point = msg.point.substring(msg.point.length - 5).replace(':', '')
+      const $tr = $(`#logs-${point}-${msg.index}`)
+      $tr.find('td:eq(2)').text(msg.time)
+      $tr.find('td:eq(3)').text(msg.level)
+      $tr.find('td:eq(4)').text(msg.msg)
+      const $td4 = $tr.find('td:eq(5)')
+      if (msg.level === 'error') {
+        $td4.text(msg.error)
+      } else if (msg.result) {
+        $td4.text(msg.result)
+      } else if (msg.remain) {
+        $td4.text(msg.remain + '秒后开抢')
+      }
+    }
+  }
+}
+
+function flushPoints(points, threadNum) {
+  const $logsTbody = $('#logs tbody')
+  $logsTbody.html('')
+  const list = points.split(' ')
+  for (let point of list) {
+    const pointId = point.replace(':', '')
+    for (let i = 0; i < threadNum; i++) {
+      $logsTbody.append(`<tr id="logs-${pointId}-${i}">
+<td>${point}</td>
+<td>${i}</td>
+<td></td>
+<td></td>
+<td>正在登录...</td>
+<td style="max-width: 200px;"></td>
+</tr>`)
+    }
+  }
+}
+
+function validateData() {
+  const data = {
+    username: $('#username').val(),
+    password: $('#password').val(),
+    points: $('#points').val(),
+    threadNum: parseInt($('#threadNum').val()),
+    info: $('#info').val()
+  }
+  let pass = true
+  $('#controlForm .form-group').removeClass('has-error')
+  for (let key in data) {
+    if (!data[key]) {
+      pass = false
+      $(`#${key}`).parents('.form-group').addClass('has-error')
+    }
+  }
+  if (pass) {
+    data.points = data.points.replaceAll(',', ' ')
+    return data
+  }
+  return false
+}
+
+function toggleButton() {
+  const $btns = $('#btns').children()
+  state = !!$btns.eq(0).attr('disabled')
+  $btns.eq(0).attr('disabled', !state)
+  $btns.eq(1).attr('disabled', !state)
+  $btns.eq(2).attr('disabled', state)
+}
+
+function stop() {
+  if (!sock) {
+    return
+  }
+  sock.send('stop')
+}
+
+function setMessage(type, html) {
+  $('#alert')
+    .removeClass('alert-success')
+    .removeClass('alert-warning')
+    .removeClass('alert-danger')
+    .addClass('alert-' + type)
+    .html(html)
+}
+
+function modal(options, onOk, callback) {
+  if (!$('#affirmModal')[0]) {
+    $('body').append(`<div class="modal fade" id="affirmModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+  <div class="modal-dialog modal-sm" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title">确认</h4>
+      </div>
+      <div class="modal-body">
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+        <button type="button" class="btn btn-primary">确定</button>
+      </div>
+    </div>
+  </div>
+</div>`)
+  }
+  $('#affirmModal').modal('show')
+  $('#affirmModal .modal-title').text(options.title ? options.title : '提示')
+  $('#affirmModal .modal-body').html(options.msg)
+  $('#affirmModal .btn-primary')
+    .unbind()
+    .click(() => {
+      if (onOk) onOk()
+      $('#affirmModal').modal('hide')
+    })
+  if (callback) callback()
+}
+</script>
+</body>
+</html>
