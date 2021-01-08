@@ -103,14 +103,14 @@
                        style="background-color: transparent;">
               </div>
             </div>
-            <div class="form-group">
-              <label for="threadNum" class="col-sm-3 control-label">线程数</label>
-              <div class="col-sm-9">
-                <input type="number" class="form-control" id="threadNum" placeholder="线程数，根据测试时CPU和网络情况调整，并非越多越好"
-                       onblur="validateData()"
-                       style="background-color: transparent;">
-              </div>
-            </div>
+            <!--            <div class="form-group">-->
+            <!--              <label for="threadNum" class="col-sm-3 control-label">线程数</label>-->
+            <!--              <div class="col-sm-9">-->
+            <!--                <input type="number" class="form-control" id="threadNum" placeholder="线程数，根据测试时CPU和网络情况调整，并非越多越好"-->
+            <!--                       onblur="validateData()"-->
+            <!--                       style="background-color: transparent;">-->
+            <!--              </div>-->
+            <!--            </div>-->
             <div class="form-group">
               <label for="info" class="col-sm-3 control-label">申报信息</label>
               <div class="col-sm-9">
@@ -172,9 +172,6 @@ function run(mode) {
     return
   }
   data.active = mode
-  if (mode === 'dev') {
-    data.threadNum = 1
-  }
   toggleButton()
   flushPoints(data.points, data.threadNum)
   let login = false
@@ -251,8 +248,8 @@ function validateData() {
     username: $('#username').val(),
     password: $('#password').val(),
     points: $('#points').val(),
-    threadNum: parseInt($('#threadNum').val()),
-    info: $('#info').val()
+    info: $('#info').val(),
+    threadNum: 4
   }
   let pass = true
   $('#controlForm .form-group').removeClass('has-error')
@@ -263,7 +260,8 @@ function validateData() {
     }
   }
   if (pass) {
-    data.points = data.points.replaceAll(',', ' ')
+    data.points = data.points.trim().replaceAll(',', ' ')
+    data.info = data.info.trim()
     return data
   }
   return false
