@@ -172,9 +172,9 @@ function run(mode) {
     return
   }
   data.active = mode
-  if (mode === 'dev') {
-    data.threadNum = 1
-  }
+  // if (mode === 'dev') {
+  //   data.threadNum = 1
+  // }
   toggleButton()
   flushPoints(data.points, data.threadNum)
   let login = false
