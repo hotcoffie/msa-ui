@@ -5,9 +5,11 @@ import (
 	"github.com/gin-gonic/gin"
 	"log"
 	"msa-ui/handler"
+	"msa-ui/messageBox"
+	"net"
+	"net/http"
 	"os"
 	"os/exec"
-	"os/signal"
 	"path/filepath"
 	"runtime"
 	"syscall"
@@ -28,7 +30,14 @@ func main() {
 		api.POST("/saveUser", handler.SaveUserHandler)
 		api.GET("/run", handler.GinWebsocketHandler(handler.RunHandle))
 	}
-	go r.Run()
+
+	l, err := net.Listen("tcp", ":8080")
+	if err != nil {
+		if runtime.GOOS == "windows" {
+			messageBox.Show("错误！", "服务启动失败！具体错误信息请查看 logs/ui.log")
+		}
+		log.Panic("服务启动失败: ", err)
+	}
 	if runtime.GOOS == "windows" {
 		cmd := exec.Command("cmd", "/C", "start", "http://localhost:8080/static")
 		cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
@@ -36,11 +45,10 @@ func main() {
 			fmt.Println(err)
 		}
 	}
-
-	c := make(chan os.Signal)
-	// 监听退出信号量
-	signal.Notify(c, syscall.SIGTERM, syscall.SIGINT)
-	<-c
+	// 绑定到server上
+	if err = http.Serve(l, r); err != nil {
+		log.Panic("服务异常终止: ", err)
+	}
 }
 
 func getLogFile() *os.File {
