@@ -16,6 +16,12 @@ const userFile = "users.json"
 var Users = make(map[string]string)
 
 func init() {
+	if _, err := os.Stat(configPath); os.IsNotExist(err) {
+		err = os.Mkdir(configPath, os.ModePerm)
+		if err != nil {
+			log.Panic("配置目录创建失败", err)
+		}
+	}
 	initUsers()
 }
 

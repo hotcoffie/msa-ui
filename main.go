@@ -16,6 +16,12 @@ import (
 const logPath = "logs"
 
 func main() {
+	if _, err := os.Stat(logPath); os.IsNotExist(err) {
+		err = os.Mkdir(logPath, os.ModePerm)
+		if err != nil {
+			log.Panic("日志目录创建失败", err)
+		}
+	}
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	logFileName := filepath.Join(logPath, "ui.log")
 	logFile, err := os.OpenFile(logFileName, os.O_CREATE|os.O_WRONLY|os.O_APPEND, os.ModePerm)
