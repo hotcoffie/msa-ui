@@ -15,8 +15,6 @@ import (
 	"syscall"
 )
 
-const configPath = "setting"
-
 func InitHandler(c *gin.Context) {
 	c.JSON(200, gin.H{
 		"code": 200,
